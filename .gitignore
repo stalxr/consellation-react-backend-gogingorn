@@ -1,0 +1,38 @@
+# Environment variables
+.env
+
+# Uploads directory
+uploads/
+
+# Temporary files
+tmp/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Go build artifacts
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Go test cache
+*.test
+
+# Go modules cache
+go.sum
+
+# Logs
+*.log
+
+# Database
+*.db
+*.sqlite

@@ -1,25 +1,35 @@
-version: '3.8'
-
 services:
-  # PostgreSQL 15 - база данных для приложения
-  postgres:
+  db:
     image: postgres:15-alpine
     container_name: charity_postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
       POSTGRES_DB: charity
+      POSTGRES_HOST_AUTH_METHOD: trust
     ports:
       - "5432:5432"
     volumes:
-      # Сохраняем данные БД в локальной папке для персистентности
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
+      test: ["CMD-SHELL", "pg_isready -U postgres -d charity"]
+      interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 20
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: charity_api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PORT: "8080"
+    ports:
+      - "8080:8080"
 
 volumes:
   postgres_data:

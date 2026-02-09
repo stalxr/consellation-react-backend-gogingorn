@@ -19,18 +19,20 @@ import (
 
 func main() {
 	// Загружаем переменные окружения из .env файла
-	if err := godotenv.Load(); err != nil {
-		log.Println("⚠️  Файл .env не найден, используются переменные окружения системы")
+	projectRoot, _ := filepath.Abs("../../")
+	envPath := filepath.Join(projectRoot, ".env")
+	if err := godotenv.Load(envPath); err != nil {
+		log.Printf("⚠️  Файл .env не найден по пути %s, используются переменные окружения системы", envPath)
 	}
 
 	// Инициализируем JWT
 	utils.InitJWT()
 
 	// Подключаемся к базе данных
-	database, err := db.ConnectDB()
-	if err != nil {
-		log.Fatalf("❌ Ошибка подключения к БД: %v", err)
-	}
+	db.Connect()
+
+	// Получаем подключение к БД
+	database := db.DB
 
 	// Инициализируем репозитории
 	userRepo := repository.NewUserRepository(database)

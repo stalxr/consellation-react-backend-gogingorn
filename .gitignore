@@ -27,12 +27,14 @@ Thumbs.db
 # Go test cache
 *.test
 
-# Go modules cache
-go.sum
-
 # Logs
 *.log
 
 # Database
 *.db
 *.sqlite
+
+# Local-only artifacts
+pg_hba.conf
+init.sql
+pkg/db/sqlite.go

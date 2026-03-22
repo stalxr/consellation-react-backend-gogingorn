@@ -1,4 +1,5 @@
-FROM golang:1.25-alpine AS build
+# Build stage
+FROM golang:1.21-alpine AS builder
 
 WORKDIR /app
 
@@ -7,15 +8,17 @@ RUN go mod download
 
 COPY . .
 
-RUN go build -o /app/bin/api ./cmd/api
+RUN go build -o charity-api ./cmd/api/main.go
 
-FROM alpine:3.20
+FROM alpine:latest
 
 WORKDIR /app
 
-COPY --from=build /app/bin/api ./api
-COPY openapi.yaml ./openapi.yaml
+COPY --from=builder /app/charity-api .
+COPY --from=builder /app/openapi.yaml ./openapi.yaml
+
+RUN mkdir -p uploads/images uploads/reports
 
 EXPOSE 8080
 
-CMD ["/app/api"]
+CMD ["./charity-api"]

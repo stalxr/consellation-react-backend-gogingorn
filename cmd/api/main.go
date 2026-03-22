@@ -55,6 +55,7 @@ func main() {
 	newsHandler := handlers.NewNewsHandler(newsService)
 	reportHandler := handlers.NewReportHandler(reportService)
 	uploadHandler := handlers.NewUploadHandler()
+	paymentHandler := handlers.NewPaymentHandler(donationService)
 
 	// Настраиваем Gin
 	if os.Getenv("GIN_MODE") == "" {
@@ -129,7 +130,13 @@ func main() {
 		{
 			donations.POST("/pay", middleware.OptionalAuthMiddleware(), donationHandler.CreatePayment)
 			donations.GET("/my", middleware.AuthMiddleware(), donationHandler.GetMyDonations)
+
+			// Админские роуты для ручного подтверждения
+			donations.POST("/:id/complete", middleware.AuthMiddleware(), middleware.AdminMiddleware(), paymentHandler.ManualCompleteDonation)
 		}
+
+		// Webhook для платежной системы (публичный, но с защитой по секрету или IP)
+		api.POST("/payments/callback", paymentHandler.PaymentCallback)
 
 		// Публичные роуты (News)
 		news := api.Group("/news")

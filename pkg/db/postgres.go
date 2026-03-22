@@ -23,26 +23,37 @@ func Connect() {
 	// Проверяем DATABASE_URL (Railway, Render и т.д.)
 	databaseURL := os.Getenv("DATABASE_URL")
 	if databaseURL == "" {
-		// Railway может использовать DATABASE_PUBLIC_URL
 		databaseURL = os.Getenv("DATABASE_PUBLIC_URL")
 	}
 	
-	log.Printf("🔍 DATABASE_URL найден: %v", databaseURL != "")
-	log.Printf("🔍 DATABASE_PUBLIC_URL найден: %v", os.Getenv("DATABASE_PUBLIC_URL") != "")
+	// Railway предоставляет отдельные переменные PGHOST, PGPORT и т.д.
+	pgHost := os.Getenv("PGHOST")
+	pgPort := os.Getenv("PGPORT")
+	pgUser := os.Getenv("PGUSER")
+	pgPassword := os.Getenv("PGPASSWORD")
+	pgDatabase := os.Getenv("PGDATABASE")
+	
+	log.Printf("🔍 DATABASE_URL: %v", databaseURL != "")
+	log.Printf("🔍 PGHOST: %s, PGPORT: %s, PGUSER: %s, PGDATABASE: %s", pgHost, pgPort, pgUser, pgDatabase)
 	
 	if databaseURL != "" {
+		// Используем полный URL если есть
 		dsn = databaseURL
-		log.Println("🔌 Подключаемся к Postgres через DATABASE_URL...")
+		log.Println("🔌 Подключаемся через DATABASE_URL...")
+	} else if pgHost != "" && pgPort != "" {
+		// Строим DSN из отдельных переменных Railway
+		dsn = fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=require TimeZone=UTC",
+			pgHost, pgUser, pgPassword, pgDatabase, pgPort)
+		log.Println("🔌 Подключаемся через Railway PG* переменные...")
 	} else {
-		// Локальная разработка или Docker Compose
+		// Локальная разработка
 		host := "localhost"
 		port := 5432
 		if _, err := os.Stat("/.dockerenv"); err == nil {
 			host = "db"
-			port = 5432
 		}
 		dsn = fmt.Sprintf("host=%s user=postgres dbname=charity port=%d sslmode=disable TimeZone=UTC", host, port)
-		log.Println("🔌 Подключаемся к Postgres (локально)...")
+		log.Println("🔌 Подключаемся локально...")
 	}
 
 	// Ретрай-луп: контейнер может подняться позже приложения.

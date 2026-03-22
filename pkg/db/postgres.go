@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"charity-backend/internal/models"
@@ -20,6 +21,17 @@ var DB *gorm.DB
 func Connect() {
 	var dsn string
 	
+	// Debug: покажем все переменные окружения
+	log.Println("🔍 Все переменные окружения:")
+	for _, env := range os.Environ() {
+		if strings.Contains(env, "PG") || strings.Contains(env, "DATABASE") || strings.Contains(env, "POSTGRES") {
+			parts := strings.SplitN(env, "=", 2)
+			if len(parts) == 2 {
+				log.Printf("  %s=%s", parts[0], parts[1])
+			}
+		}
+	}
+	
 	// Проверяем DATABASE_URL (Railway, Render и т.д.)
 	databaseURL := os.Getenv("DATABASE_URL")
 	if databaseURL == "" {
@@ -33,20 +45,34 @@ func Connect() {
 	pgPassword := os.Getenv("PGPASSWORD")
 	pgDatabase := os.Getenv("PGDATABASE")
 	
-	log.Printf("🔍 DATABASE_URL: %v", databaseURL != "")
-	log.Printf("🔍 PGHOST: %s, PGPORT: %s, PGUSER: %s, PGDATABASE: %s", pgHost, pgPort, pgUser, pgDatabase)
+	// Альтернативные имена переменных
+	if pgHost == "" {
+		pgHost = os.Getenv("POSTGRES_HOST")
+	}
+	if pgPort == "" {
+		pgPort = os.Getenv("POSTGRES_PORT")
+	}
+	if pgUser == "" {
+		pgUser = os.Getenv("POSTGRES_USER")
+	}
+	if pgPassword == "" {
+		pgPassword = os.Getenv("POSTGRES_PASSWORD")
+	}
+	if pgDatabase == "" {
+		pgDatabase = os.Getenv("POSTGRES_DB")
+	}
+	
+	log.Printf("🔍 DATABASE_URL найден: %v", databaseURL != "")
+	log.Printf("🔍 PGHOST: '%s', PGPORT: '%s', PGUSER: '%s', PGDATABASE: '%s'", pgHost, pgPort, pgUser, pgDatabase)
 	
 	if databaseURL != "" {
-		// Используем полный URL если есть
 		dsn = databaseURL
 		log.Println("🔌 Подключаемся через DATABASE_URL...")
 	} else if pgHost != "" && pgPort != "" {
-		// Строим DSN из отдельных переменных Railway
 		dsn = fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=require TimeZone=UTC",
 			pgHost, pgUser, pgPassword, pgDatabase, pgPort)
 		log.Println("🔌 Подключаемся через Railway PG* переменные...")
 	} else {
-		// Локальная разработка
 		host := "localhost"
 		port := 5432
 		if _, err := os.Stat("/.dockerenv"); err == nil {

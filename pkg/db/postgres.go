@@ -21,9 +21,18 @@ func Connect() {
 	var dsn string
 	
 	// Проверяем DATABASE_URL (Railway, Render и т.д.)
-	if databaseURL := os.Getenv("DATABASE_URL"); databaseURL != "" {
+	databaseURL := os.Getenv("DATABASE_URL")
+	if databaseURL == "" {
+		// Railway может использовать DATABASE_PUBLIC_URL
+		databaseURL = os.Getenv("DATABASE_PUBLIC_URL")
+	}
+	
+	log.Printf("🔍 DATABASE_URL найден: %v", databaseURL != "")
+	log.Printf("🔍 DATABASE_PUBLIC_URL найден: %v", os.Getenv("DATABASE_PUBLIC_URL") != "")
+	
+	if databaseURL != "" {
 		dsn = databaseURL
-		log.Println("🔌 Подключаемся к Postgres (DATABASE_URL)...")
+		log.Println("🔌 Подключаемся к Postgres через DATABASE_URL...")
 	} else {
 		// Локальная разработка или Docker Compose
 		host := "localhost"
@@ -33,7 +42,7 @@ func Connect() {
 			port = 5432
 		}
 		dsn = fmt.Sprintf("host=%s user=postgres dbname=charity port=%d sslmode=disable TimeZone=UTC", host, port)
-		log.Println("🔌 Подключаемся к Postgres (trust auth, без пароля)...")
+		log.Println("🔌 Подключаемся к Postgres (локально)...")
 	}
 
 	// Ретрай-луп: контейнер может подняться позже приложения.

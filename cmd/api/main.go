@@ -101,6 +101,10 @@ func main() {
 	// API v1 группа
 	api := router.Group("/api/v1")
 	{
+		// Health check endpoint (для Railway)
+		api.GET("/health", func(c *gin.Context) {
+			c.JSON(200, gin.H{"status": "ok"})
+		})
 		// Публичные роуты (Auth)
 		auth := api.Group("/auth")
 		{

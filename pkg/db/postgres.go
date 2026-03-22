@@ -15,28 +15,26 @@ import (
 // DB — глобальный объект подключения к базе данных (GORM).
 var DB *gorm.DB
 
-// Connect подключается к PostgreSQL (trust mode, без пароля),
+// Connect подключается к PostgreSQL,
 // дожидается готовности контейнера через ретраи и выполняет миграции схемы.
 func Connect() {
-	// ВАЖНО: в Docker Compose мы используем trust-auth (POSTGRES_HOST_AUTH_METHOD=trust),
-	// поэтому пароль в DSN НЕ указываем. Это сделано специально, чтобы на Windows
-	// уйти от SASL/SCRAM циклов при локальной разработке.
-	//
-	// DSN строго по требованиям (для локального запуска):
-	// host=localhost user=postgres dbname=charity port=5432 sslmode=disable TimeZone=UTC
-	//
-	// НЮАНС: если мы запускаем API в Docker, то "localhost" указывает на контейнер API,
-	// а Postgres живёт в контейнере "db". Поэтому внутри Docker меняем host на "db".
-	host := "localhost"
-	port := 5432
-	if _, err := os.Stat("/.dockerenv"); err == nil {
-		host = "db"
-		port = 5432
+	var dsn string
+	
+	// Проверяем DATABASE_URL (Railway, Render и т.д.)
+	if databaseURL := os.Getenv("DATABASE_URL"); databaseURL != "" {
+		dsn = databaseURL
+		log.Println("🔌 Подключаемся к Postgres (DATABASE_URL)...")
+	} else {
+		// Локальная разработка или Docker Compose
+		host := "localhost"
+		port := 5432
+		if _, err := os.Stat("/.dockerenv"); err == nil {
+			host = "db"
+			port = 5432
+		}
+		dsn = fmt.Sprintf("host=%s user=postgres dbname=charity port=%d sslmode=disable TimeZone=UTC", host, port)
+		log.Println("🔌 Подключаемся к Postgres (trust auth, без пароля)...")
 	}
-
-	dsn := fmt.Sprintf("host=%s user=postgres dbname=charity port=%d sslmode=disable TimeZone=UTC", host, port)
-
-	log.Println("🔌 Подключаемся к Postgres (trust auth, без пароля)...")
 
 	// Ретрай-луп: контейнер может подняться позже приложения.
 	// 10 попыток по 2 секунды.

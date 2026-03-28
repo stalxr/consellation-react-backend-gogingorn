@@ -100,6 +100,36 @@ func main() {
 		log.Fatalf("❌ Ошибка создания директории загрузок: %v", err)
 	}
 
+	// Swagger UI endpoint - фронтенд смотрит документацию API
+	router.GET("/docs", func(c *gin.Context) {
+		c.Header("Content-Type", "text/html")
+		c.String(200, `<!DOCTYPE html>
+<html>
+<head>
+	<title>Charity API - Swagger UI</title>
+	<link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@4.15.5/swagger-ui.css" />
+</head>
+<body>
+	<div id="swagger-ui"></div>
+	<script src="https://unpkg.com/swagger-ui-dist@4.15.5/swagger-ui-bundle.js"></script>
+	<script src="https://unpkg.com/swagger-ui-dist@4.15.5/swagger-ui-standalone-preset.js"></script>
+	<script>
+		window.onload = function() {
+			SwaggerUIBundle({
+				url: '/openapi.yaml',
+				dom_id: '#swagger-ui',
+				presets: [SwaggerUIBundle.presets.apis, SwaggerUIStandalonePreset],
+				layout: "StandaloneLayout"
+			});
+		};
+	</script>
+</body>
+</html>`)
+	})
+
+	// Раздаём openapi.yaml статически
+	router.StaticFile("/openapi.yaml", "./openapi.yaml")
+
 	// Настраиваем статическую раздачу файлов из папки uploads
 	// Это позволяет открывать загруженные изображения и PDF через браузер
 	router.Static("/uploads", "./uploads")

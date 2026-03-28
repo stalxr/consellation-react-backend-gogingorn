@@ -7,6 +7,7 @@ import (
 
 	"charity-backend/internal/handlers"
 	"charity-backend/internal/middleware"
+	"charity-backend/internal/models"
 	"charity-backend/internal/repository"
 	"charity-backend/internal/services"
 	"charity-backend/pkg/db"
@@ -14,7 +15,9 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/joho/godotenv"
+	"gorm.io/gorm"
 )
 
 func main() {
@@ -33,6 +36,9 @@ func main() {
 
 	// Получаем подключение к БД
 	database := db.DB
+
+	// SeedData заполняет базу тестовыми данными (дети с онкологией)
+	SeedData(database)
 
 	// Инициализируем репозитории
 	userRepo := repository.NewUserRepository(database)
@@ -186,5 +192,91 @@ func main() {
 	if err := router.Run(":" + port); err != nil {
 		log.Fatalf("❌ Ошибка запуска сервера: %v", err)
 	}
+}
+
+// SeedData заполняет базу тестовыми данными (дети с онкологией)
+func SeedData(database *gorm.DB) {
+	log.Println("🌱 Начинаем заполнение тестовыми данными...")
+
+	var count int64
+	database.Model(&models.User{}).Count(&count)
+	if count > 0 {
+		log.Println("ℹ️ Данные уже существуют, пропускаем seed")
+		return
+	}
+
+	// Создаем админа
+	adminPassword, _ := utils.HashPassword("admin123")
+	admin := &models.User{
+		ID:           uuid.MustParse("550e8400-e29b-41d4-a716-446655440000"),
+		Email:        "admin@nastenka.ru",
+		PasswordHash: adminPassword,
+		FullName:     "Администратор Настенька",
+		Role:         "admin",
+		TotalDonated: 0,
+	}
+	database.Create(admin)
+	log.Println("✅ Админ: admin@nastenka.ru / admin123")
+
+	// Создаем тестового пользователя
+	userPassword, _ := utils.HashPassword("user123")
+	user := &models.User{
+		ID:           uuid.MustParse("550e8400-e29b-41d4-a716-446655440001"),
+		Email:        "user@example.com",
+		PasswordHash: userPassword,
+		FullName:     "Иван Петров",
+		Role:         "user",
+		TotalDonated: 15000,
+	}
+	database.Create(user)
+	log.Println("✅ Юзер: user@example.com / user123")
+
+	// Дети с онкологией
+	dreams := []models.Dream{
+		{
+			ID:               uuid.MustParse("11111111-1111-1111-1111-111111111111"),
+			Title:            "Лечение лейкемии для Маши, 7 лет",
+			Slug:             "lechenie-leykemii-mashi-7-let",
+			ShortDescription: strPtr("Маше нужен курс химиотерапии и пересадка костного мозга"),
+			FullDescription:  strPtr("<p>У Маши острая лимфобластная лейкемия. Необходим курс химиотерапии с пересадкой костного мозга. Стоимость: 2,800,000 руб.</p>"),
+			TargetAmount:     2800000,
+			CollectedAmount:  950000,
+			Status:           "active",
+			CoverImage:       strPtr("/uploads/images/masha.jpg"),
+		},
+		{
+			ID:               uuid.MustParse("22222222-2222-2222-2222-222222222222"),
+			Title:            "Операция по удалению опухоли мозга для Вани, 5 лет",
+			Slug:             "operaciya-opuhol-mozga-vanya-5-let",
+			ShortDescription: strPtr("Сложная нейрохирургическая операция в Израиле"),
+			FullDescription:  strPtr("<p>У Вани медуллобластома. Операция в Израиле. Стоимость: 3,500,000 руб.</p>"),
+			TargetAmount:     3500000,
+			CollectedAmount:  2100000,
+			Status:           "active",
+			CoverImage:       strPtr("/uploads/images/vanya.jpg"),
+		},
+		{
+			ID:               uuid.MustParse("33333333-3333-3333-3333-333333333333"),
+			Title:            "Протонная терапия для Кати, 12 лет (рак глаза)",
+			Slug:             "protonnaya-terapiya-katya-12-let",
+			ShortDescription: strPtr("Современное лечение ретинобластомы в Германии"),
+			FullDescription:  strPtr("<p>У Кати ретинобластома. Протонная терапия в Гейдельберге. Стоимость: 1,800,000 руб.</p>"),
+			TargetAmount:     1800000,
+			CollectedAmount:  1800000,
+			Status:           "completed",
+			CoverImage:       strPtr("/uploads/images/katya.jpg"),
+		},
+	}
+
+	for _, dream := range dreams {
+		database.Create(&dream)
+		log.Printf("✅ Мечта: %s", dream.Title)
+	}
+
+	log.Println("🎉 Seed завершён!")
+}
+
+func strPtr(s string) *string {
+	return &s
 }
 

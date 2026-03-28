@@ -6,10 +6,12 @@ info:
     name: Backend Developer
   version: 2.0.0.1
 servers:
-- url: https://virtserver.swaggerhub.com/sad-41a/dream/2.0.0.1
-  description: SwaggerHub API Auto Mocking
+- url: https://charity-api-hfs7.onrender.com/api/v1
+  description: Render Production Server
 - url: http://localhost:8080/api/v1
   description: Local Server
+- url: https://virtserver.swaggerhub.com/sad-41a/dream/2.0.0.1
+  description: SwaggerHub API Auto Mocking
 paths:
   /auth/register:
     post:

@@ -26,7 +26,7 @@ type CreateDreamRequest struct {
 	Title           string  `json:"title" binding:"required"`
 	ShortDescription *string `json:"short_description,omitempty"`
 	FullDescription *string `json:"full_description,omitempty"`
-	TargetAmount    float64 `json:"target_amount" binding:"required,gt=0"`
+	TargetAmount    float64 `json:"target_amount" binding:"gte=0"`
 	CoverImage      *string `json:"cover_image,omitempty"`
 }
 
